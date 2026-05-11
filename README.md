@@ -36,13 +36,7 @@ NEOS is a fine-tuned 32B language model specialized in offensive and defensive c
 
 ## Models
 
-| Resource | Link |
-|---|---|
-| v10 merged (BF16, ~65GB) | [rod123/neos-v10-merged](https://huggingface.co/rod123/neos-v10-merged) |
-| v10 LoRA only (~2MB) | [rod123/neos-lora-v10](https://huggingface.co/rod123/neos-lora-v10) |
-| v10 dataset (3k ReAct) | [rod123/neos-v10-dataset](https://huggingface.co/datasets/rod123/neos-v10-dataset) |
-| v9 merged (BF16, ~65GB) | [rod123/neos-v9-merged](https://huggingface.co/rod123/neos-v9-merged) |
-| v9 LoRA only | [rod123/neos-lora-v9](https://huggingface.co/rod123/neos-lora-v9) |
+Model weights are private. Access available for verified security researchers and red teams — contact via email.
 
 ## Training — v10
 
