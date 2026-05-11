@@ -1,0 +1,22 @@
+{
+  "computer_security": {
+    "correct": 85,
+    "total": 100,
+    "acc": 85.0
+  },
+  "high_school_computer_science": {
+    "correct": 91,
+    "total": 100,
+    "acc": 91.0
+  },
+  "virology": {
+    "correct": 91,
+    "total": 166,
+    "acc": 54.8
+  },
+  "security_studies": {
+    "correct": 194,
+    "total": 245,
+    "acc": 79.2
+  }
+}
