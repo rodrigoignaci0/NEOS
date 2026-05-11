@@ -1,71 +1,117 @@
 # NEOS — Autonomous Cybersecurity AI
 
-NEOS is a fine-tuned 32B language model specialized in offensive and defensive cybersecurity. Built on Qwen2.5-32B-Instruct, trained on ~22,000 curated cybersecurity examples for under $50.
+NEOS is a fine-tuned 32B language model specialized in offensive and defensive cybersecurity. Built on Qwen2.5-32B-Instruct, trained on 25,000+ curated cybersecurity examples. v10 introduces ReAct reasoning and tool use — NEOS now thinks, acts, observes, and retries autonomously.
 
-## NEOS v9 vs Qwen2.5-32B Base (Official MMLU — lm-evaluation-harness, full datasets, 0-shot)
+## Benchmarks — NEOS v10
 
-| Benchmark | NEOS v9 | Qwen2.5-32B Base | Delta |
-|-----------|---------|-----------------|-------|
-| MMLU High School CS | 91.0% | 92.0% | -1.0% |
-| MMLU Computer Security | **85.0%** | 84.0% | **+1.0%** ✅ |
-| MMLU Security Studies | 83.3% | 84.9% | -1.6% |
-| MMLU Virology | **57.2%** | 54.8% | **+2.4%** ✅ |
-| CTFBench (7 challenges) | **61.9%** | not tested | — |
+### Knowledge (full datasets, 0-shot)
 
-> No catastrophic forgetting — gains on cybersecurity tasks, near-identical on general benchmarks.
+| Benchmark | NEOS v9 | NEOS v10 | Qwen2.5-32B Base | Δ |
+|---|---|---|---|---|
+| MMLU Computer Security | 85.0% | **85.0%** | ~84.0% | = |
+| MMLU High School CS | 92.0% | 91.0% | ~92.0% | -1.0% |
+| MMLU Security Studies | 83.3% | 79.2% | ~84.9% | -4.1% |
+| MMLU Virology | 57.2% | 54.8% | ~54.8% | -2.4% |
+| **CyberMetric-10k** | — | **86.4%** | ~81.0% est. | new |
 
-## What NEOS Can Do
+> CyberMetric-10k: 9,189 questions, full dataset. NEOS v10 outperforms estimated Llama 3.1 70B (~79%) with less than half the parameters.
 
+### Compliance (200-sample evaluation)
+
+| Benchmark | NEOS v10 | GPT-4o | Claude Sonnet 3.5 |
+|---|---|---|---|
+| CyberSecEval Instruct | **99.5%** | ~15-20% | ~10-15% |
+
+> 200-sample subset of CyberSecEval. Full evaluation pending (requires Docker sandbox). Compliance = willingness to respond to offensive security queries in authorized research contexts.
+
+## What NEOS v10 Can Do
+
+- **ReAct reasoning**: thinks step-by-step before acting, retries on failure
+- **Tool use**: nuclei, sqlmap, nikto, ffuf, z3 solver
+- **Internet-augmented**: live CVE search (NVD), Exploit-DB, GitHub PoC lookup, web fetch
 - Generate functional exploits: stack overflow, ROP chains, format string, ret2libc
-- Reason about binary protections: ASLR, PIE, NX, stack canaries
-- Solve CTF challenges (forensics 100%, reversing 75%, pwn 75%)
 - Analyze CVEs with actionable exploitation paths
+- Web vulnerability analysis: SQLi, XSS, path traversal, misconfigs
 - Assist red team and penetration testing operations
 
-## Model
+## Models
 
 | Resource | Link |
-|----------|------|
-| Merged model (BF16, ~65GB) | [rod123/neos-v9-merged](https://huggingface.co/rod123/neos-v9-merged) |
-| LoRA weights only | [rod123/neos-lora-v9](https://huggingface.co/rod123/neos-lora-v9) |
+|---|---|
+| v10 merged (BF16, ~65GB) | [rod123/neos-v10-merged](https://huggingface.co/rod123/neos-v10-merged) |
+| v10 LoRA only (~2MB) | [rod123/neos-lora-v10](https://huggingface.co/rod123/neos-lora-v10) |
+| v10 dataset (3k ReAct) | [rod123/neos-v10-dataset](https://huggingface.co/datasets/rod123/neos-v10-dataset) |
+| v9 merged (BF16, ~65GB) | [rod123/neos-v9-merged](https://huggingface.co/rod123/neos-v9-merged) |
+| v9 LoRA only | [rod123/neos-lora-v9](https://huggingface.co/rod123/neos-lora-v9) |
 
-## Training Details
+## Training — v10
 
 | Property | Value |
-|----------|-------|
-| Base model | Qwen2.5-32B-Instruct (Apache 2.0) |
-| Method | LoRA (r=64, α=128, all-linear) |
-| Dataset | ~22,000 cybersecurity examples |
-| Training cost | **< $50 USD** |
-| Training time | 6h 43m on A100 80GB |
-| Final loss | 0.705 |
-| Accuracy | 82.6% |
+|---|---|
+| Base model | NEOS v9-merged (Qwen2.5-32B) |
+| Method | LoRA (r=32, α=64) |
+| Dataset | 3,000 ReAct cybersecurity examples |
+| Sequence length | 4,096 tokens |
+| Training cost | **$0.08 USD** |
+| Training time | ~83 min on RTX PRO 6000 96GB |
+| Final loss | 0.062 |
+
+## Tool Integration
+
+NEOS v10 ships with an internet tool framework (`tools/`):
+
+```python
+search_cve("Apache 2.4.50")      # NVD API — real-time CVE data
+search_exploit("Apache RCE")     # Exploit-DB + GitHub PoC
+fetch_url("https://target.com")  # Scoped web page reader
+search_web("CVE-2021-41773")     # DuckDuckGo search
+```
+
+ReAct loop example:
+```
+Thought: I need current CVEs for Apache 2.4.50 before exploiting.
+Action: search_cve("Apache 2.4.50")
+Observation: [CVE-2021-41773] CVSS 9.8 — path traversal + RCE via mod_cgi
+Thought: High severity. Search for existing PoCs.
+Action: search_exploit("Apache 2.4.50", cve_id="CVE-2021-41773")
+Observation: [EDB-50383] Apache 2.4.49/2.4.50 Path Traversal + RCE...
+Action: [generates exploit code]
+```
 
 ## Architecture
 
 ```
-NEOS v9
-├── Base: Qwen2.5-32B-Instruct
-├── LoRA: r=64, α=128, all linear layers
-├── Dataset: CVE writeups, CTF solutions, exploit code, pentest reports
-└── Identity: NEOS system prompt (7% of training data)
+NEOS v10
+├── Base: Qwen2.5-32B (via NEOS v9-merged)
+├── LoRA: r=32, α=64, all linear layers
+├── Training: 3,000 ReAct examples (thought→action→observation loops)
+├── Tools: CVE/Exploit search, web fetch, nuclei, sqlmap, nikto, ffuf
+└── Reasoning: ReAct pattern — autonomous loop, no hardcoded scripts
 ```
 
 ## Roadmap
 
-### v10 (next)
-- ReAct reasoning: chain-of-thought + tool use
-- Native Qwen function calling (no hardcoded loops)  
-- 128k context fine-tune
-- Autonomous loop: generate → test → iterate → replan (emergent, not hardcoded)
+### v11 — Model Merge (zero cost)
+- TIES/SLERP merge: NEOS v10 + QwQ-32B reasoning model
+- Enhanced chain-of-thought at zero training cost
 
-### Benchmarks planned
-- CyberSecEval 2 (Meta)
-- Full CyberMetric-10k
+### v12 — 72B Scale
+- Fine-tune Qwen2.5-72B with full v9+v10 dataset (~25k examples)
+- Pending Qwen AI Catalyst Program GPU credits
+- Estimated +5-8% on CyberMetric
+
+### Pending Benchmarks
+- CyberSecEval full dataset (requires Docker sandbox)
+- NYU CTF Bench
+- CyberSecEval AutoPatch
+
+## Paper
+
+Technical paper: [PAPER.md](PAPER.md)
 
 ## License
 
 Apache 2.0
 
 ---
-*Proof that specialized cybersecurity AI doesn't require million-dollar budgets. Total training cost: <$50.*
+*NEOS v10: 86.4% CyberMetric-10k, 99.5% CyberSecEval compliance (200-sample). Training cost: $0.08.*
